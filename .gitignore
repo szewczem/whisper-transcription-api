@@ -222,3 +222,12 @@ __marimo__/
 # Folders and files
 recruitment_task/
 
+# Local development files
+data/input/*
+!data/input/.gitkeep
+
+data/output/*
+!data/output/.gitkeep
+
+data/models/*
+!data/models/.gitkeep

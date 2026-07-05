@@ -31,7 +31,7 @@ class TranscriptionJob:
 
     created_at: datetime = field(default_factory=utc_now)
     started_at: datetime | None = None
-    completed_at: datetime | None = None
+    finished_at: datetime | None = None
 
     def mark_processing(self) -> None:
         if self.status is not TranscriptionJobStatus.QUEUED:
@@ -66,7 +66,7 @@ class TranscriptionJob:
         self.transcription = transcription
         self.vtt_content = vtt_content
         self.error = None
-        self.completed_at = utc_now()
+        self.finished_at = utc_now()
 
     def mark_failed(self, *, error: str) -> None:
         if self.status not in (
@@ -77,4 +77,4 @@ class TranscriptionJob:
 
         self.status = TranscriptionJobStatus.FAILED
         self.error = error
-        self.completed_at = utc_now()
+        self.finished_at = utc_now()

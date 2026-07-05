@@ -70,7 +70,7 @@ def test_job_can_be_completed() -> None:
     assert job.transcription == "Dzień dobry."
     assert job.vtt_content == "WEBVTT\n"
     assert job.error is None
-    assert job.completed_at is not None
+    assert job.finished_at is not None
 
 
 def test_job_can_fail() -> None:
@@ -83,4 +83,4 @@ def test_job_can_fail() -> None:
 
     assert job.status is TranscriptionJobStatus.FAILED
     assert job.error == "Unable to download audio file."
-    assert job.completed_at is not None
+    assert job.finished_at is not None

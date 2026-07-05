@@ -8,6 +8,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 
 class Settings(BaseSettings):
     whisper_model_name: str = "small"
+    database_url: str
 
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",

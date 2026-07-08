@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from app.integrations.audio_downloader import AudioDownloadError, download_audio_file
+from app.integrations.audio.audio_downloader import AudioDownloadError, download_audio_file
 
 
 def test_download_audio_file_raises_error_for_unreachable_url(tmp_path: Path) -> None:

@@ -8,7 +8,7 @@ from app.database.repositories.transcription_job_repository import (
 )
 from app.database.session import SessionFactory
 from app.domain.transcription.job import TranscriptionJobStatus
-from app.integrations.audio_downloader import download_audio_file
+from app.integrations.audio.audio_downloader import download_audio_file
 from app.integrations.whisper.transcriber import WhisperTranscriber
 from app.services.transcription.metrics_logger import append_transcription_metrics
 from app.services.transcription.vtt_generator import build_webvtt

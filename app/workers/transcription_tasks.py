@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from uuid import UUID
@@ -9,10 +10,13 @@ from app.database.repositories.transcription_job_repository import (
 from app.database.session import SessionFactory
 from app.domain.transcription.job import TranscriptionJobStatus
 from app.integrations.audio.audio_downloader import download_audio_file
+from app.integrations.webhook.client import WebhookDeliveryError, send_transcription_webhook
 from app.integrations.whisper.transcriber import WhisperTranscriber
 from app.services.transcription.metrics_logger import append_transcription_metrics
 from app.services.transcription.vtt_generator import build_webvtt
 from app.workers.celery_app import celery_app
+
+logger = logging.getLogger(__name__)
 
 
 @celery_app.task(name="transcriptions.process")
@@ -66,6 +70,8 @@ def process_transcription_job(job_id: str) -> None:
                 metrics_log_path=settings.metrics_log_path,
             )
 
+            _send_webhook_safely(str(job.id))
+
         except Exception as error:
             session.rollback()
 
@@ -82,4 +88,20 @@ def process_transcription_job(job_id: str) -> None:
                 metrics_log_path=settings.metrics_log_path,
             )
 
+            _send_webhook_safely(str(failed_job.id))
+
             raise
+
+
+def _send_webhook_safely(job_id: str) -> None:
+    with SessionFactory() as session:
+        repository = TranscriptionJobRepository(session)
+        job = repository.get_by_id(UUID(job_id))
+
+        if job is None:
+            return
+
+        try:
+            send_transcription_webhook(job=job)
+        except WebhookDeliveryError as error:
+            logger.warning("%s", error)

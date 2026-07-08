@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import PlainTextResponse, Response
 
 from app.api.dependencies import get_transcription_job_service
 from app.api.v1.schemas.transcription import (
@@ -8,7 +9,7 @@ from app.api.v1.schemas.transcription import (
     CreateTranscriptionResponse,
     TranscriptionStatusResponse,
 )
-from app.domain.transcription.job import TranscriptionJob
+from app.domain.transcription.job import TranscriptionJob, TranscriptionJobStatus
 from app.services.transcription.job_service import TranscriptionJobService
 
 router = APIRouter(
@@ -59,6 +60,62 @@ def get_transcription_job(
     return _to_status_response(job)
 
 
+@router.get("/transcribe/{job_id}/json")
+def get_transcription_json_output(
+    job_id: UUID,
+    service: TranscriptionJobService = Depends(get_transcription_job_service),
+) -> dict[str, str | int | None]:
+    job = _get_completed_job_or_raise(
+        job_id=job_id,
+        service=service,
+    )
+
+    return {
+        "job_id": str(job.id),
+        "language": job.language,
+        "transcription": job.transcription,
+        "word_count": len(job.transcription.split()) if job.transcription else 0,
+    }
+
+
+@router.get("/transcribe/{job_id}/txt", response_class=PlainTextResponse)
+def get_transcription_txt_output(
+    job_id: UUID,
+    service: TranscriptionJobService = Depends(get_transcription_job_service),
+) -> PlainTextResponse:
+    job = _get_completed_job_or_raise(
+        job_id=job_id,
+        service=service,
+    )
+
+    return PlainTextResponse(
+        content=job.transcription or "",
+        media_type="text/plain; charset=utf-8",
+        headers={
+            "Content-Disposition": f'inline; filename="{job.id}.txt"',
+        },
+    )
+
+
+@router.get("/transcribe/{job_id}/vtt")
+def get_transcription_vtt_output(
+    job_id: UUID,
+    service: TranscriptionJobService = Depends(get_transcription_job_service),
+) -> Response:
+    job = _get_completed_job_or_raise(
+        job_id=job_id,
+        service=service,
+    )
+
+    return Response(
+        content=job.vtt_content or "",
+        media_type="text/vtt; charset=utf-8",
+        headers={
+            "Content-Disposition": f'inline; filename="{job.id}.vtt"',
+        },
+    )
+
+
 def _to_status_response(job: TranscriptionJob) -> TranscriptionStatusResponse:
     return TranscriptionStatusResponse(
         job_id=job.id,
@@ -70,3 +127,25 @@ def _to_status_response(job: TranscriptionJob) -> TranscriptionStatusResponse:
         finished_at=job.finished_at,
         error=job.error,
     )
+
+
+def _get_completed_job_or_raise(
+    *,
+    job_id: UUID,
+    service: TranscriptionJobService,
+) -> TranscriptionJob:
+    job = service.get_job(job_id)
+
+    if job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Transcription job not found",
+        )
+
+    if job.status is not TranscriptionJobStatus.COMPLETED:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Transcription job is not completed yet",
+        )
+
+    return job

@@ -10,6 +10,7 @@ from app.database.session import SessionFactory
 from app.domain.transcription.job import TranscriptionJobStatus
 from app.integrations.audio_downloader import download_audio_file
 from app.integrations.whisper.transcriber import WhisperTranscriber
+from app.services.transcription.metrics_logger import append_transcription_metrics
 from app.services.transcription.vtt_generator import build_webvtt
 from app.workers.celery_app import celery_app
 
@@ -60,6 +61,11 @@ def process_transcription_job(job_id: str) -> None:
             repository.update(job)
             session.commit()
 
+            append_transcription_metrics(
+                job=job,
+                metrics_log_path=settings.metrics_log_path,
+            )
+
         except Exception as error:
             session.rollback()
 
@@ -70,5 +76,10 @@ def process_transcription_job(job_id: str) -> None:
             failed_job.mark_failed(error=str(error))
             repository.update(failed_job)
             session.commit()
+
+            append_transcription_metrics(
+                job=failed_job,
+                metrics_log_path=settings.metrics_log_path,
+            )
 
             raise

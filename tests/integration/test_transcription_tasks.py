@@ -38,7 +38,12 @@ def test_process_transcription_job_completes_job(
 
     with (
         patch("app.workers.transcription_tasks.download_audio_file") as download_mock,
-        patch("app.workers.transcription_tasks.WhisperTranscriber") as transcriber_class_mock,
+        patch(
+            "app.workers.transcription_tasks.WhisperTranscriber",
+        ) as transcriber_class_mock,
+        patch(
+            "app.workers.transcription_tasks.append_transcription_metrics",
+        ) as metrics_mock,
     ):
         transcriber_mock = Mock()
         transcriber_mock.transcribe.return_value = fake_result
@@ -52,6 +57,7 @@ def test_process_transcription_job_completes_job(
     assert updated_job.status is TranscriptionJobStatus.COMPLETED
     assert updated_job.progress == 100
     assert updated_job.transcription == "Dzień dobry."
+    assert updated_job.vtt_content is not None
     assert "WEBVTT" in updated_job.vtt_content
     assert updated_job.error is None
     assert updated_job.started_at is not None
@@ -59,6 +65,7 @@ def test_process_transcription_job_completes_job(
 
     download_mock.assert_called_once()
     transcriber_mock.transcribe.assert_called_once()
+    metrics_mock.assert_called_once()
 
 
 @pytest.mark.integration
@@ -74,9 +81,14 @@ def test_process_transcription_job_marks_job_as_failed_on_error(
     repository.create(job)
     db_session.commit()
 
-    with patch(
-        "app.workers.transcription_tasks.download_audio_file",
-        side_effect=RuntimeError("download failed"),
+    with (
+        patch(
+            "app.workers.transcription_tasks.download_audio_file",
+            side_effect=RuntimeError("download failed"),
+        ),
+        patch(
+            "app.workers.transcription_tasks.append_transcription_metrics",
+        ) as metrics_mock,
     ):
         with pytest.raises(RuntimeError, match="download failed"):
             process_transcription_job(str(job.id))
@@ -87,3 +99,5 @@ def test_process_transcription_job_marks_job_as_failed_on_error(
     assert updated_job.status is TranscriptionJobStatus.FAILED
     assert updated_job.error == "download failed"
     assert updated_job.finished_at is not None
+
+    metrics_mock.assert_called_once()

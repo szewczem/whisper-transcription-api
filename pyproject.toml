@@ -6,11 +6,13 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "alembic>=1.18.5",
+    "celery[redis]>=5.6.3",
     "fastapi[standard]>=0.139.0",
     "openai-whisper>=20250625",
     "psycopg[binary]>=3.3.4",
     "pydantic-settings>=2.14.2",
     "sqlalchemy>=2.0.51",
+    "torch>=2.12.1",
 ]
 
 [dependency-groups]
@@ -33,3 +35,13 @@ pythonpath = ["."]
 markers = [
     "integration: tests requiring a running PostgreSQL database",
 ]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

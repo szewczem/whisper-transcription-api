@@ -9,6 +9,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 class Settings(BaseSettings):
     whisper_model_name: str = "small"
     database_url: str
+    celery_broker_url: str = "redis://redis:6379/0"
 
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",

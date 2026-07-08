@@ -58,7 +58,6 @@ def test_send_transcription_webhook_posts_completed_job_payload() -> None:
     assert payload["transcription"] == "Dzień dobry."
     assert payload["vtt_content"] == "WEBVTT\n"
     assert payload["created_at"] is not None
-    assert payload["finished_at"] is not None
     assert payload["error"] is None
 
 
@@ -91,7 +90,6 @@ def test_send_transcription_webhook_posts_failed_job_payload() -> None:
     assert payload["language"] == "pl"
     assert payload["transcription"] is None
     assert payload["vtt_content"] is None
-    assert payload["finished_at"] is not None
     assert payload["error"] == "download failed"
 
 

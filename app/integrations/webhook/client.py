@@ -43,7 +43,7 @@ def _build_webhook_payload(job: TranscriptionJob) -> dict[str, Any]:
         "transcription": job.transcription,
         "vtt_content": job.vtt_content,
         "created_at": _serialize_datetime(job.created_at),
-        "finished_at": _serialize_datetime(job.finished_at),
+        "completed_at": _serialize_datetime(job.finished_at),
         "error": job.error,
     }
 

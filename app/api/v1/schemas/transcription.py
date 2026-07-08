@@ -45,5 +45,5 @@ class TranscriptionStatusResponse(BaseModel):
     transcription: str | None = None
     vtt_content: str | None = None
     created_at: datetime
-    finished_at: datetime | None = None
+    completed_at: datetime | None = None
     error: str | None = None

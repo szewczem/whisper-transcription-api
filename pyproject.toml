@@ -8,6 +8,7 @@ dependencies = [
     "alembic>=1.18.5",
     "celery[redis]>=5.6.3",
     "fastapi[standard]>=0.139.0",
+    "httpx>=0.28.1",
     "openai-whisper>=20250625",
     "psycopg[binary]>=3.3.4",
     "pydantic-settings>=2.14.2",
@@ -17,7 +18,6 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "httpx>=0.28.1",
     "pytest>=9.1.1",
     "ruff>=0.15.20",
 ]

@@ -6,6 +6,7 @@ from app.database.repositories.transcription_job_repository import (
     TranscriptionJobRepository,
 )
 from app.domain.transcription.job import TranscriptionJob
+from app.workers.transcription_tasks import process_transcription_job
 
 
 class TranscriptionJobService:
@@ -37,6 +38,8 @@ class TranscriptionJobService:
         except Exception:
             self._session.rollback()
             raise
+
+        process_transcription_job.delay(str(stored_job.id))
 
         return stored_job
 

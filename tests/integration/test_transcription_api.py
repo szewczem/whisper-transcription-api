@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+from unittest.mock import Mock, patch
 from uuid import UUID, uuid4
 
 import pytest
@@ -10,9 +12,19 @@ from app.database.repositories.transcription_job_repository import (
 from app.domain.transcription.job import TranscriptionJobStatus
 
 
+@pytest.fixture
+def queue_delay_mock() -> Iterator[Mock]:
+    with patch(
+        "app.services.transcription.job_service.process_transcription_job.delay",
+    ) as delay_mock:
+        yield delay_mock
+
+
 @pytest.mark.integration
 def test_create_transcription_job_returns_accepted_and_persists_job(
-    client: TestClient, db_session: Session
+    client: TestClient,
+    db_session: Session,
+    queue_delay_mock: Mock,
 ) -> None:
     response = client.post(
         "/api/v1/transcribe",
@@ -41,10 +53,14 @@ def test_create_transcription_job_returns_accepted_and_persists_job(
     assert stored_job.language == "pl"
     assert stored_job.webhook_url == "https://example.com/webhook"
 
+    queue_delay_mock.assert_called_once_with(str(job_id))
+
 
 @pytest.mark.integration
 def test_get_transcription_job_returns_queued_status(
-    client: TestClient, db_session: Session
+    client: TestClient,
+    db_session: Session,
+    queue_delay_mock: Mock,
 ) -> None:
     create_response = client.post(
         "/api/v1/transcribe",
@@ -68,7 +84,10 @@ def test_get_transcription_job_returns_queued_status(
     assert body["progress"] == 0
     assert "transcription" not in body
     assert "vtt_content" not in body
+    assert "finished_at" not in body
     assert "completed_at" not in body
+
+    queue_delay_mock.assert_called_once()
 
 
 @pytest.mark.integration

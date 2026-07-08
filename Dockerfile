@@ -21,3 +21,10 @@ COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini ./
 COPY scripts ./scripts
+
+RUN groupadd --system appuser \
+    && useradd --system --gid appuser --home-dir /app appuser \
+    && mkdir -p /app/data/input /app/data/output /app/data/models /app/logs \
+    && chown -R appuser:appuser /app
+
+USER appuser

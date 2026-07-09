@@ -38,6 +38,7 @@ class TranscriptionJob:
             raise ValueError("Only queued jobs can start processing.")
 
         self.status = TranscriptionJobStatus.PROCESSING
+        self.progress = 10
         self.started_at = utc_now()
 
     def update_progress(self, progress: int) -> None:

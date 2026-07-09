@@ -3,12 +3,14 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from uuid import UUID
 
+from sqlalchemy.orm import Session
+
 from app.core.config import settings
 from app.database.repositories.transcription_job_repository import (
     TranscriptionJobRepository,
 )
 from app.database.session import SessionFactory
-from app.domain.transcription.job import TranscriptionJobStatus
+from app.domain.transcription.job import TranscriptionJob, TranscriptionJobStatus
 from app.integrations.audio.audio_downloader import download_audio_file
 from app.integrations.webhook.client import WebhookDeliveryError, send_transcription_webhook
 from app.integrations.whisper.transcriber import WhisperTranscriber
@@ -46,9 +48,23 @@ def process_transcription_job(job_id: str) -> None:
                     destination_path=audio_path,
                 )
 
+                _update_job_progress(
+                    repository=repository,
+                    session=session,
+                    job=job,
+                    progress=30,
+                )
+
                 transcriber = WhisperTranscriber(
                     model_name=settings.whisper_model_name,
                     model_cache_dir=settings.model_cache_dir,
+                )
+
+                _update_job_progress(
+                    repository=repository,
+                    session=session,
+                    job=job,
+                    progress=45,
                 )
 
                 transcription_result = transcriber.transcribe(
@@ -56,7 +72,21 @@ def process_transcription_job(job_id: str) -> None:
                     language=job.language,
                 )
 
+                _update_job_progress(
+                    repository=repository,
+                    session=session,
+                    job=job,
+                    progress=75,
+                )
+
                 vtt_content = build_webvtt(transcription_result.segments)
+
+                _update_job_progress(
+                    repository=repository,
+                    session=session,
+                    job=job,
+                    progress=85,
+                )
 
             job.mark_completed(
                 transcription=transcription_result.text,
@@ -105,3 +135,15 @@ def _send_webhook_safely(job_id: str) -> None:
             send_transcription_webhook(job=job)
         except WebhookDeliveryError as error:
             logger.warning("%s", error)
+
+
+def _update_job_progress(
+    *,
+    repository: TranscriptionJobRepository,
+    session: Session,
+    job: TranscriptionJob,
+    progress: int,
+) -> None:
+    job.update_progress(progress)
+    repository.update(job)
+    session.commit()

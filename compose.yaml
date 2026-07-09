@@ -66,7 +66,8 @@ services:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       CELERY_BROKER_URL: redis://redis:6379/0
     volumes:
-      - ./logs:/app/logs
+      - ./logs:/app/logs      
+      - ./data/models:/app/data/models
     depends_on:
       migrate:
         condition: service_completed_successfully

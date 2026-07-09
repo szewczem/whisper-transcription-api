@@ -95,11 +95,7 @@ def process_transcription_job(job_id: str) -> None:
             repository.update(job)
             session.commit()
 
-            append_transcription_metrics(
-                job=job,
-                metrics_log_path=settings.metrics_log_path,
-            )
-
+            _append_metrics_safely(job)
             _send_webhook_safely(str(job.id))
 
         except Exception as error:
@@ -113,11 +109,7 @@ def process_transcription_job(job_id: str) -> None:
             repository.update(failed_job)
             session.commit()
 
-            append_transcription_metrics(
-                job=failed_job,
-                metrics_log_path=settings.metrics_log_path,
-            )
-
+            _append_metrics_safely(failed_job)
             _send_webhook_safely(str(failed_job.id))
 
             raise
@@ -147,3 +139,17 @@ def _update_job_progress(
     job.update_progress(progress)
     repository.update(job)
     session.commit()
+
+
+def _append_metrics_safely(job: TranscriptionJob) -> None:
+    try:
+        append_transcription_metrics(
+            job=job,
+            metrics_log_path=settings.metrics_log_path,
+        )
+    except Exception as error:
+        logger.error(
+            "Failed to write transcription metrics for job %s: %s",
+            job.id,
+            error,
+        )

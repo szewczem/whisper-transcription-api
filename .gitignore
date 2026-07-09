@@ -222,14 +222,20 @@ __marimo__/
 # Folders and files
 recruitment_task/
 
-# Local development files
-data/input/*
-!data/input/.gitkeep
+# Local audio files
+data/input/*.mp3
+data/input/*.wav
+data/input/*.m4a
 
-data/output/*
-!data/output/.gitkeep
-
+# Whisper / model cache or generated files
 data/models/*
 !data/models/.gitkeep
 
-logs/*.log
+# Output files
+data/output/*
+!data/output/.gitkeep
+
+# Keep folder placeholders
+!data/input/.gitkeep
+!data/models/.gitkeep
+!data/output/.gitkeep
